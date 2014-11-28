@@ -6,12 +6,13 @@
 
 """
 import re
-import urllib2
-import urllib
+import urllib.parse
+import urllib.request
+import urllib.error
 from xml.dom.minidom import parseString
-from pastebin_options import OPTION_PASTE, OPTION_LIST, OPTION_TRENDS, OPTION_DELETE, OPTION_USER_DETAILS
-from pastebin_constants import PASTEBIN_API_POST_URL, PASTEBIN_API_LOGIN_URL, PASTEBIN_RAW_URL
-from pastebin_exceptions import PastebinBadRequestException, PastebinNoPastesException, PastebinFileException, PastebinHTTPErrorException
+from .pastebin_options import OPTION_PASTE, OPTION_LIST, OPTION_TRENDS, OPTION_DELETE, OPTION_USER_DETAILS
+from .pastebin_constants import PASTEBIN_API_POST_URL, PASTEBIN_API_LOGIN_URL, PASTEBIN_RAW_URL
+from .pastebin_exceptions import PastebinBadRequestException, PastebinNoPastesException, PastebinFileException, PastebinHTTPErrorException
 
 class PastebinPython(object):
 	"""This is the main class to be instantiated to use pastebin.com functionality
@@ -77,7 +78,7 @@ class PastebinPython(object):
 
 		"""
 		api_user_key = self.api_user_key if self.api_user_key else ""
-		api_paste_code = api_paste_code.encode('utf-8') if api_paste_code else ""
+		api_paste_code = api_paste_code if api_paste_code else ""
 
 		postData = {
 			'api_option':OPTION_PASTE,
@@ -86,7 +87,7 @@ class PastebinPython(object):
 
 		localVar = locals()
 
-		for k,v in localVar.items():
+		for k,v in list(localVar.items()):
 			if re.search('^api_', k) and v != "":
 				postData[k] = v
 
@@ -136,8 +137,10 @@ class PastebinPython(object):
 
 		"""
 
-		request = urllib2.urlopen(url, urllib.urlencode(data))
-		response = str(request.read())
+		data = urllib.parse.urlencode(data)
+		data = data.encode('utf-8')
+		request = urllib.request.urlopen(url, data)
+		response = request.read().decode("utf-8")
 		request.close()
 
 		if re.search('^Bad API request', response):
@@ -380,10 +383,10 @@ class PastebinPython(object):
 		"""
 
 		try:
-			request = urllib2.urlopen("%s%s" % (PASTEBIN_RAW_URL, api_paste_key))
+			request = urllib.request.urlopen("%s%s" % (PASTEBIN_RAW_URL, api_paste_key))
 			response = request.read()
 			request.close()
-		except urllib2.HTTPError as e:
+		except urllib.error.HTTPError as e:
 			raise PastebinHTTPErrorException(str(e))
 
-		return response.decode('utf-8')
+		return response
